@@ -4,8 +4,6 @@ jsPsych.plugins["play-tone"] = {
   info: {},
   trial(displayElement, trialParameters) {
     const audioContext = jsPsych.pluginAPI.audioContext();
-    const audioBuffer = audioContext.createBuffer(1, 44100, 44100);
-    const channel = audioBuffer.getChannelData(0);
     const parameters = {
       sampleRate_Hz: 44100,
       frequency_Hz: 200,
@@ -26,19 +24,39 @@ jsPsych.plugins["play-tone"] = {
         duration_ms: 100,
       })
     );
-    for (let i = 0; i < channel.length; i += 1) channel[i] = tone[i];
     while (displayElement.firstChild) {
       displayElement.removeChild(displayElement.lastChild);
     }
-    const playButton = document.createElement("button");
-    playButton.onclick = () => {
+    const playInPhaseButton = document.createElement("button");
+    playInPhaseButton.onclick = () => {
+      const audioBuffer = audioContext.createBuffer(2, 44100, 44100);
+      const leftChannel = audioBuffer.getChannelData(0);
+      for (let i = 0; i < leftChannel.length; i += 1) leftChannel[i] = tone[i];
+      const rightChannel = audioBuffer.getChannelData(1);
+      for (let i = 0; i < rightChannel.length; i += 1)
+        rightChannel[i] = tone[i];
       const audioSource = audioContext.createBufferSource();
       audioSource.buffer = audioBuffer;
       audioSource.connect(audioContext.destination);
       audioSource.start();
     };
-    playButton.textContent = "play";
-    displayElement.append(playButton);
+    playInPhaseButton.textContent = "play in phase";
+    displayElement.append(playInPhaseButton);
+    const playOutOfPhaseButton = document.createElement("button");
+    playOutOfPhaseButton.onclick = () => {
+      const audioBuffer = audioContext.createBuffer(2, 44100, 44100);
+      const leftChannel = audioBuffer.getChannelData(0);
+      for (let i = 0; i < leftChannel.length; i += 1) leftChannel[i] = tone[i];
+      const rightChannel = audioBuffer.getChannelData(1);
+      for (let i = 0; i < rightChannel.length; i += 1)
+        rightChannel[i] = -tone[i];
+      const audioSource = audioContext.createBufferSource();
+      audioSource.buffer = audioBuffer;
+      audioSource.connect(audioContext.destination);
+      audioSource.start();
+    };
+    playOutOfPhaseButton.textContent = "play out of phase";
+    displayElement.append(playOutOfPhaseButton);
     const exitButton = document.createElement("button");
     exitButton.onclick = () => {
       jsPsych.finishTrial();
