@@ -24,11 +24,11 @@ describe("tone generation", () => {
   it("generates ramps", () => {
     const signal = ramp({ sampleRate_Hz: 44100, duration_ms: 100 });
     expect(signal.slice(0, 5)).toEqual([
-      squared(Math.sin((Math.PI * 0) / 4410)),
-      squared(Math.sin((Math.PI * 1) / 4410)),
-      squared(Math.sin((Math.PI * 2) / 4410)),
-      squared(Math.sin((Math.PI * 3) / 4410)),
-      squared(Math.sin((Math.PI * 4) / 4410)),
+      squared(Math.sin((Math.PI * 0) / 8820)),
+      squared(Math.sin((Math.PI * 1) / 8820)),
+      squared(Math.sin((Math.PI * 2) / 8820)),
+      squared(Math.sin((Math.PI * 3) / 8820)),
+      squared(Math.sin((Math.PI * 4) / 8820)),
     ]);
     expect(signal.length).toEqual(4410);
   });
