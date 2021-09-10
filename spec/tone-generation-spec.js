@@ -1,4 +1,4 @@
-import { pure, ramp } from "../lib/tone-generation.js";
+import { pure, ramp, multiplyFront } from "../lib/tone-generation.js";
 
 function squared(x) {
   return x * x;
@@ -31,5 +31,15 @@ describe("tone generation", () => {
       squared(Math.sin((Math.PI * 4) / 8820)),
     ]);
     expect(signal.length).toEqual(4410);
+  });
+
+  it("multiplies signals together", () => {
+    expect(multiplyFront([1, 2, 3, 4, 5], [6, 7, 8])).toEqual([
+      1 * 6,
+      2 * 7,
+      3 * 8,
+      4,
+      5,
+    ]);
   });
 });
