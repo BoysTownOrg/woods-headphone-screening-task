@@ -22,14 +22,14 @@ describe("tone generation", () => {
   });
 
   it("generates ramps", () => {
-    expect(
-      ramp({ sampleRate_Hz: 44100, duration_ms: 100 }).slice(0, 5)
-    ).toEqual([
+    const signal = ramp({ sampleRate_Hz: 44100, duration_ms: 100 });
+    expect(signal.slice(0, 5)).toEqual([
       squared(Math.sin((Math.PI * 0) / 4410)),
       squared(Math.sin((Math.PI * 1) / 4410)),
       squared(Math.sin((Math.PI * 2) / 4410)),
       squared(Math.sin((Math.PI * 3) / 4410)),
       squared(Math.sin((Math.PI * 4) / 4410)),
     ]);
+    expect(signal.length).toEqual(4410);
   });
 });
