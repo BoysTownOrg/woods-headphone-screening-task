@@ -4,5 +4,6 @@
     "**/*spec.js"
   ],
   "stopSpecOnExpectationFailure": false,
-  "random": true
+  "random": true,
+  "jsLoader": "import"
 }
