@@ -11,7 +11,10 @@ jsPsych.plugins["play-tone"] = {
       frequency_Hz: 200,
       duration_ms: 1000,
     };
-    const ramp = toneGeneration.ramp(parameters);
+    const ramp = toneGeneration.ramp({
+      sampleRate_Hz: 44100,
+      duration_ms: 100,
+    });
     const tone = toneGeneration.multiplyFront(
       toneGeneration.multiplyBack(
         toneGeneration.pure(parameters),
@@ -20,14 +23,14 @@ jsPsych.plugins["play-tone"] = {
       ramp
     );
     for (let i = 0; i < channel.length; i += 1) channel[i] = tone[i];
-    const audioSource = audioContext.createBufferSource();
-    audioSource.buffer = audioBuffer;
-    audioSource.connect(audioContext.destination);
     while (displayElement.firstChild) {
       displayElement.removeChild(displayElement.lastChild);
     }
     const playButton = document.createElement("button");
     playButton.onclick = () => {
+      const audioSource = audioContext.createBufferSource();
+      audioSource.buffer = audioBuffer;
+      audioSource.connect(audioContext.destination);
       audioSource.start();
     };
     playButton.textContent = "play";
