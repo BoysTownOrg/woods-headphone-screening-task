@@ -11,16 +11,20 @@ jsPsych.plugins["play-tone"] = {
       frequency_Hz: 200,
       duration_ms: 1000,
     };
-    const ramp = toneGeneration.ramp({
-      sampleRate_Hz: 44100,
-      duration_ms: 100,
-    });
     const tone = toneGeneration.multiplyFront(
       toneGeneration.multiplyBack(
         toneGeneration.pure(parameters),
-        ramp.reverse()
+        toneGeneration
+          .ramp({
+            sampleRate_Hz: 44100,
+            duration_ms: 100,
+          })
+          .reverse()
       ),
-      ramp
+      toneGeneration.ramp({
+        sampleRate_Hz: 44100,
+        duration_ms: 100,
+      })
     );
     for (let i = 0; i < channel.length; i += 1) channel[i] = tone[i];
     while (displayElement.firstChild) {
