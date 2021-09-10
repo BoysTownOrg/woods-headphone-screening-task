@@ -57,6 +57,22 @@ jsPsych.plugins["play-tone"] = {
     };
     playOutOfPhaseButton.textContent = "play out of phase";
     displayElement.append(playOutOfPhaseButton);
+    const playQuietButton = document.createElement("button");
+    playQuietButton.onclick = () => {
+      const audioBuffer = audioContext.createBuffer(2, 44100, 44100);
+      const leftChannel = audioBuffer.getChannelData(0);
+      for (let i = 0; i < leftChannel.length; i += 1)
+        leftChannel[i] = tone[i] / 2;
+      const rightChannel = audioBuffer.getChannelData(1);
+      for (let i = 0; i < rightChannel.length; i += 1)
+        rightChannel[i] = tone[i] / 2;
+      const audioSource = audioContext.createBufferSource();
+      audioSource.buffer = audioBuffer;
+      audioSource.connect(audioContext.destination);
+      audioSource.start();
+    };
+    playQuietButton.textContent = "play quiet";
+    displayElement.append(playQuietButton);
     const exitButton = document.createElement("button");
     exitButton.onclick = () => {
       jsPsych.finishTrial();
