@@ -73,6 +73,54 @@ jsPsych.plugins["play-tone"] = {
     );
     while (displayElement.firstChild)
       displayElement.removeChild(displayElement.lastChild);
+    const leftChannel = toneGeneration.concatenateWithSilence(
+      tone,
+      toneGeneration.concatenateWithSilence(
+        tone,
+        tone.map((x) => x / 2),
+        {
+          sampleRate_Hz: trialParameters.sampleRate_Hz,
+          silenceDuration_ms: 500,
+        }
+      ),
+      {
+        sampleRate_Hz: trialParameters.sampleRate_Hz,
+        silenceDuration_ms: 500,
+      }
+    );
+    const rightChannel = toneGeneration.concatenateWithSilence(
+      tone,
+      toneGeneration.concatenateWithSilence(
+        tone.map((x) => -x),
+        tone.map((x) => x / 2),
+        {
+          sampleRate_Hz: trialParameters.sampleRate_Hz,
+          silenceDuration_ms: 500,
+        }
+      ),
+      {
+        sampleRate_Hz: trialParameters.sampleRate_Hz,
+        silenceDuration_ms: 500,
+      }
+    );
+    const button = document.createElement("button");
+    button.onclick = () => {
+      const audioContext = jsPsych.pluginAPI.audioContext();
+      const audioBuffer = audioContext.createBuffer(
+        2,
+        leftChannel.length,
+        trialParameters.sampleRate_Hz
+      );
+      const leftChannel_ = audioBuffer.getChannelData(0);
+      for (let i = 0; i < leftChannel_.length; i += 1)
+        leftChannel_[i] = leftChannel[i];
+      const rightChannel_ = audioBuffer.getChannelData(1);
+      for (let i = 0; i < rightChannel_.length; i += 1)
+        rightChannel_[i] = rightChannel[i];
+      playAudioBuffer(audioBuffer);
+    };
+    button.textContent = "play all three";
+    displayElement.append(button);
     createPlayAudioButton(
       displayElement,
       "play in phase",
