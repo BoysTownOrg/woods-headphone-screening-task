@@ -8,6 +8,41 @@ function playAudioBuffer(audioBuffer) {
   audioSource.start();
 }
 
+function createStimulus(tone, trialParameters, channelMultipliers) {
+  return {
+    leftChannel: toneGeneration.concatenateWithSilence(
+      tone.map((x) => channelMultipliers[0].left * x),
+      toneGeneration.concatenateWithSilence(
+        tone.map((x) => channelMultipliers[1].left * x),
+        tone.map((x) => channelMultipliers[2].left * x),
+        {
+          sampleRate_Hz: trialParameters.sampleRate_Hz,
+          silenceDuration_ms: trialParameters.interstimulusInterval_ms,
+        }
+      ),
+      {
+        sampleRate_Hz: trialParameters.sampleRate_Hz,
+        silenceDuration_ms: trialParameters.interstimulusInterval_ms,
+      }
+    ),
+    rightChannel: toneGeneration.concatenateWithSilence(
+      tone.map((x) => channelMultipliers[0].right * x),
+      toneGeneration.concatenateWithSilence(
+        tone.map((x) => channelMultipliers[1].right * x),
+        tone.map((x) => channelMultipliers[2].right * x),
+        {
+          sampleRate_Hz: trialParameters.sampleRate_Hz,
+          silenceDuration_ms: trialParameters.interstimulusInterval_ms,
+        }
+      ),
+      {
+        sampleRate_Hz: trialParameters.sampleRate_Hz,
+        silenceDuration_ms: trialParameters.interstimulusInterval_ms,
+      }
+    ),
+  };
+}
+
 jsPsych.plugins["play-tone"] = {
   info: {
     name: "play-tone",
@@ -42,35 +77,14 @@ jsPsych.plugins["play-tone"] = {
         duration_ms: trialParameters.toneRampDuration_ms,
       })
     );
-    const leftChannel = toneGeneration.concatenateWithSilence(
+    const { leftChannel, rightChannel } = createStimulus(
       tone,
-      toneGeneration.concatenateWithSilence(
-        tone,
-        tone.map((x) => x / 2),
-        {
-          sampleRate_Hz: trialParameters.sampleRate_Hz,
-          silenceDuration_ms: trialParameters.interstimulusInterval_ms,
-        }
-      ),
-      {
-        sampleRate_Hz: trialParameters.sampleRate_Hz,
-        silenceDuration_ms: trialParameters.interstimulusInterval_ms,
-      }
-    );
-    const rightChannel = toneGeneration.concatenateWithSilence(
-      tone,
-      toneGeneration.concatenateWithSilence(
-        tone.map((x) => -x),
-        tone.map((x) => x / 2),
-        {
-          sampleRate_Hz: trialParameters.sampleRate_Hz,
-          silenceDuration_ms: trialParameters.interstimulusInterval_ms,
-        }
-      ),
-      {
-        sampleRate_Hz: trialParameters.sampleRate_Hz,
-        silenceDuration_ms: trialParameters.interstimulusInterval_ms,
-      }
+      trialParameters,
+      [
+        { left: 1, right: 1 },
+        { left: 1, right: -1 },
+        { left: 1 / 2, right: 1 / 2 },
+      ]
     );
     const button = document.createElement("button");
     button.onclick = () => {
