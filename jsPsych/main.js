@@ -8,6 +8,11 @@ function playAudioBuffer(audioBuffer) {
   audioSource.start();
 }
 
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/random
+function getRandomInt(max) {
+  return Math.floor(Math.random() * max);
+}
+
 function createStimulus(tone, trialParameters, channelMultipliers) {
   return {
     leftChannel: toneGeneration.concatenateWithSilence(
@@ -77,14 +82,32 @@ jsPsych.plugins["play-tone"] = {
         duration_ms: trialParameters.toneRampDuration_ms,
       })
     );
+    const channelMultipliers = new Array(3);
+    const correctChoice = getRandomInt(3);
+    const inPhasePrecedesOutOfPhase = getRandomInt(1) === 0;
+    const inPhaseMultipliers = { left: 1, right: 1 };
+    const outOfPhaseMultipliers = { left: 1, right: -1 };
+    channelMultipliers[correctChoice] = { left: 1 / 2, right: 1 / 2 };
+    let oneMultiplierPairRemaining = false;
+    for (let i = 0; i < 3; i += 1) {
+      if (i !== correctChoice) {
+        if (oneMultiplierPairRemaining) {
+          channelMultipliers[i] = inPhasePrecedesOutOfPhase
+            ? outOfPhaseMultipliers
+            : inPhaseMultipliers;
+          break;
+        } else {
+          channelMultipliers[i] = inPhasePrecedesOutOfPhase
+            ? inPhaseMultipliers
+            : outOfPhaseMultipliers;
+          oneMultiplierPairRemaining = true;
+        }
+      }
+    }
     const { leftChannel, rightChannel } = createStimulus(
       tone,
       trialParameters,
-      [
-        { left: 1, right: 1 },
-        { left: 1, right: -1 },
-        { left: 1 / 2, right: 1 / 2 },
-      ]
+      channelMultipliers
     );
     const button = document.createElement("button");
     button.onclick = () => {
