@@ -109,8 +109,17 @@ jsPsych.plugins["play-tone"] = {
       trialParameters,
       channelMultipliers
     );
-    const button = document.createElement("button");
-    button.onclick = () => {
+    const playButton = document.createElement("button");
+    const firstChoiceButton = document.createElement("button");
+    firstChoiceButton.style.display = "none";
+    firstChoiceButton.textContent = "FIRST sound is SOFTEST";
+    const secondChoiceButton = document.createElement("button");
+    secondChoiceButton.style.display = "none";
+    secondChoiceButton.textContent = "SECOND sound is SOFTEST";
+    const thirdChoiceButton = document.createElement("button");
+    thirdChoiceButton.style.display = "none";
+    thirdChoiceButton.textContent = "THIRD sound is SOFTEST";
+    playButton.onclick = () => {
       const audioContext = jsPsych.pluginAPI.audioContext();
       const audioBuffer = audioContext.createBuffer(
         2,
@@ -123,16 +132,31 @@ jsPsych.plugins["play-tone"] = {
       const rightChannel_ = audioBuffer.getChannelData(1);
       for (let i = 0; i < rightChannel_.length; i += 1)
         rightChannel_[i] = rightChannel[i];
-      playAudioBuffer(audioBuffer);
+      const audioSource = audioContext.createBufferSource();
+      audioSource.buffer = audioBuffer;
+      audioSource.connect(audioContext.destination);
+      playButton.style.display = "none";
+      audioSource.onended = () => {
+        firstChoiceButton.style.display = "";
+        secondChoiceButton.style.display = "";
+        thirdChoiceButton.style.display = "";
+      };
+      audioSource.start();
     };
-    button.textContent = "play all three";
-    displayElement.append(button);
-    const exitButton = document.createElement("button");
-    exitButton.onclick = () => {
-      jsPsych.finishTrial();
+    playButton.textContent = "play";
+    displayElement.append(playButton);
+    displayElement.append(firstChoiceButton);
+    displayElement.append(secondChoiceButton);
+    displayElement.append(thirdChoiceButton);
+    firstChoiceButton.onclick = () => {
+      jsPsych.finishTrial({ correct: correctChoice === 0 });
     };
-    exitButton.textContent = "exit";
-    displayElement.append(exitButton);
+    secondChoiceButton.onclick = () => {
+      jsPsych.finishTrial({ correct: correctChoice === 1 });
+    };
+    thirdChoiceButton.onclick = () => {
+      jsPsych.finishTrial({ correct: correctChoice === 2 });
+    };
   },
 };
 jsPsych.init({
