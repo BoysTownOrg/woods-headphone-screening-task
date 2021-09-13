@@ -2,5 +2,6 @@
   "type": "module",
   "devDependencies": {
     "jasmine": "^3.9.0"
-  }
+  },
+  "scripts": { "test": "jasmine" }
 }

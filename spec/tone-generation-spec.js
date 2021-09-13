@@ -3,6 +3,7 @@ import {
   ramp,
   multiplyFront,
   multiplyBack,
+  concatenateWithSilence,
 } from "../lib/tone-generation.js";
 
 function squared(x) {
@@ -54,5 +55,14 @@ describe("tone generation", () => {
       4 * 7,
       5 * 8,
     ]);
+  });
+
+  it("concatenates signals with silence between", () => {
+    expect(
+      concatenateWithSilence([1, 2, 3], [4, 5, 6], {
+        sampleRate_Hz: 8,
+        silenceDuration_ms: 500,
+      })
+    ).toEqual([1, 2, 3, 0, 0, 0, 0, 4, 5, 6]);
   });
 });
