@@ -1,13 +1,5 @@
 import * as toneGeneration from "../lib/tone-generation.js";
 
-function playAudioBuffer(audioBuffer) {
-  const audioContext = jsPsych.pluginAPI.audioContext();
-  const audioSource = audioContext.createBufferSource();
-  audioSource.buffer = audioBuffer;
-  audioSource.connect(audioContext.destination);
-  audioSource.start();
-}
-
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/random
 function getRandomInt(max) {
   return Math.floor(Math.random() * max);
@@ -48,9 +40,16 @@ function createStimulus(tone, trialParameters, channelMultipliers) {
   };
 }
 
-jsPsych.plugins["play-tone"] = {
+function createRamp(trialParameters) {
+  return toneGeneration.ramp({
+    sampleRate_Hz: trialParameters.sampleRate_Hz,
+    duration_ms: trialParameters.toneRampDuration_ms,
+  });
+}
+
+jsPsych.plugins["headphone-screen-trial"] = {
   info: {
-    name: "play-tone",
+    name: "headphone-screen-trial",
     description: "",
     parameters: {
       sampleRate_Hz: {},
@@ -63,25 +62,6 @@ jsPsych.plugins["play-tone"] = {
   trial(displayElement, trialParameters) {
     while (displayElement.firstChild)
       displayElement.removeChild(displayElement.lastChild);
-    const tone = toneGeneration.multiplyFront(
-      toneGeneration.multiplyBack(
-        toneGeneration.pure({
-          sampleRate_Hz: trialParameters.sampleRate_Hz,
-          frequency_Hz: trialParameters.toneFrequency_Hz,
-          duration_ms: trialParameters.toneDuration_ms,
-        }),
-        toneGeneration
-          .ramp({
-            sampleRate_Hz: trialParameters.sampleRate_Hz,
-            duration_ms: trialParameters.toneRampDuration_ms,
-          })
-          .reverse()
-      ),
-      toneGeneration.ramp({
-        sampleRate_Hz: trialParameters.sampleRate_Hz,
-        duration_ms: trialParameters.toneRampDuration_ms,
-      })
-    );
     const channelMultipliers = new Array(3);
     const correctChoice = getRandomInt(3);
     const inPhasePrecedesOutOfPhase = getRandomInt(1) === 0;
@@ -104,21 +84,25 @@ jsPsych.plugins["play-tone"] = {
         }
       }
     }
+    const playButton = document.createElement("button");
+    playButton.textContent = "play";
     const { leftChannel, rightChannel } = createStimulus(
-      tone,
+      toneGeneration.multiplyFront(
+        toneGeneration.multiplyBack(
+          toneGeneration.pure({
+            sampleRate_Hz: trialParameters.sampleRate_Hz,
+            frequency_Hz: trialParameters.toneFrequency_Hz,
+            duration_ms: trialParameters.toneDuration_ms,
+          }),
+          createRamp(trialParameters).reverse()
+        ),
+        createRamp(trialParameters)
+      ),
       trialParameters,
       channelMultipliers
     );
-    const playButton = document.createElement("button");
-    const firstChoiceButton = document.createElement("button");
-    firstChoiceButton.style.display = "none";
-    firstChoiceButton.textContent = "FIRST sound is SOFTEST";
-    const secondChoiceButton = document.createElement("button");
-    secondChoiceButton.style.display = "none";
-    secondChoiceButton.textContent = "SECOND sound is SOFTEST";
-    const thirdChoiceButton = document.createElement("button");
-    thirdChoiceButton.style.display = "none";
-    thirdChoiceButton.textContent = "THIRD sound is SOFTEST";
+    const choiceButtons = document.createElement("div");
+    choiceButtons.style.display = "none";
     playButton.onclick = () => {
       const audioContext = jsPsych.pluginAPI.audioContext();
       const audioBuffer = audioContext.createBuffer(
@@ -137,37 +121,47 @@ jsPsych.plugins["play-tone"] = {
       audioSource.connect(audioContext.destination);
       playButton.style.display = "none";
       audioSource.onended = () => {
-        firstChoiceButton.style.display = "";
-        secondChoiceButton.style.display = "";
-        thirdChoiceButton.style.display = "";
+        choiceButtons.style.display = "";
       };
       audioSource.start();
     };
-    playButton.textContent = "play";
     displayElement.append(playButton);
-    displayElement.append(firstChoiceButton);
-    displayElement.append(secondChoiceButton);
-    displayElement.append(thirdChoiceButton);
-    firstChoiceButton.onclick = () => {
-      jsPsych.finishTrial({ correct: correctChoice === 0 });
-    };
-    secondChoiceButton.onclick = () => {
-      jsPsych.finishTrial({ correct: correctChoice === 1 });
-    };
-    thirdChoiceButton.onclick = () => {
-      jsPsych.finishTrial({ correct: correctChoice === 2 });
-    };
+    displayElement.append(choiceButtons);
+    const choiceNames = ["FIRST", "SECOND", "THIRD"];
+    for (let i = 0; i < 3; i += 1) {
+      const choiceButton = document.createElement("button");
+      choiceButton.textContent = `${choiceNames[i]} sound is SOFTEST`;
+      choiceButtons.append(choiceButton);
+      choiceButton.onclick = () => {
+        jsPsych.finishTrial({ correct: correctChoice === i });
+      };
+    }
   },
 };
 jsPsych.init({
   timeline: [
     {
-      type: "play-tone",
-      sampleRate_Hz: 44100,
-      toneFrequency_Hz: 200,
-      toneDuration_ms: 1000,
-      toneRampDuration_ms: 100,
-      interstimulusInterval_ms: 500,
+      timeline: [
+        {
+          type: "headphone-screen-trial",
+          sampleRate_Hz: 44100,
+          toneFrequency_Hz: 200,
+          toneDuration_ms: 1000,
+          toneRampDuration_ms: 100,
+          interstimulusInterval_ms: 500,
+        },
+      ],
+      repetitions: 6,
+    },
+    {
+      type: "html-keyboard-response",
+      stimulus() {
+        return `<p>You correctly answered ${jsPsych.data
+          .get()
+          .filter({ correct: true })
+          .count()} trials.</p>
+          <p>Press any key to exit.</p>`;
+      },
     },
   ],
 });
