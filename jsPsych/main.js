@@ -5,37 +5,48 @@ function getRandomInt(max) {
   return Math.floor(Math.random() * max);
 }
 
-function createStimulus(tone, trialParameters, channelMultipliers) {
-  return {
-    leftChannel: toneGeneration.concatenateWithSilence(
-      tone.map((x) => channelMultipliers[0].left * x),
-      toneGeneration.concatenateWithSilence(
-        tone.map((x) => channelMultipliers[1].left * x),
-        tone.map((x) => channelMultipliers[2].left * x),
-        {
-          sampleRate_Hz: trialParameters.sampleRate_Hz,
-          silenceDuration_ms: trialParameters.interstimulusInterval_ms,
-        }
+function createChannel(
+  tone,
+  trialParameters,
+  channelMultipliers,
+  toneMultiplierFromChannelMultiplier
+) {
+  return toneGeneration.concatenateWithSilence(
+    tone.map(
+      (x) => toneMultiplierFromChannelMultiplier(channelMultipliers[0]) * x
+    ),
+    toneGeneration.concatenateWithSilence(
+      tone.map(
+        (x) => toneMultiplierFromChannelMultiplier(channelMultipliers[1]) * x
+      ),
+      tone.map(
+        (x) => toneMultiplierFromChannelMultiplier(channelMultipliers[2]) * x
       ),
       {
         sampleRate_Hz: trialParameters.sampleRate_Hz,
         silenceDuration_ms: trialParameters.interstimulusInterval_ms,
       }
     ),
-    rightChannel: toneGeneration.concatenateWithSilence(
-      tone.map((x) => channelMultipliers[0].right * x),
-      toneGeneration.concatenateWithSilence(
-        tone.map((x) => channelMultipliers[1].right * x),
-        tone.map((x) => channelMultipliers[2].right * x),
-        {
-          sampleRate_Hz: trialParameters.sampleRate_Hz,
-          silenceDuration_ms: trialParameters.interstimulusInterval_ms,
-        }
-      ),
-      {
-        sampleRate_Hz: trialParameters.sampleRate_Hz,
-        silenceDuration_ms: trialParameters.interstimulusInterval_ms,
-      }
+    {
+      sampleRate_Hz: trialParameters.sampleRate_Hz,
+      silenceDuration_ms: trialParameters.interstimulusInterval_ms,
+    }
+  );
+}
+
+function createStimulus(tone, trialParameters, channelMultipliers) {
+  return {
+    leftChannel: createChannel(
+      tone,
+      trialParameters,
+      channelMultipliers,
+      (channelMultiplier) => channelMultiplier.left
+    ),
+    rightChannel: createChannel(
+      tone,
+      trialParameters,
+      channelMultipliers,
+      (channelMultiplier) => channelMultiplier.right
     ),
   };
 }
@@ -45,6 +56,21 @@ function createRamp(trialParameters) {
     sampleRate_Hz: trialParameters.sampleRate_Hz,
     duration_ms: trialParameters.toneRampDuration_ms,
   });
+}
+
+// https://stackoverflow.com/a/2450976
+function shuffle(array) {
+  let currentIndex = array.length;
+  while (currentIndex !== 0) {
+    const randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex -= 1;
+    [array[currentIndex], array[randomIndex]] = [
+      array[randomIndex],
+      array[currentIndex],
+    ];
+  }
+
+  return array;
 }
 
 jsPsych.plugins["headphone-screen-trial"] = {
@@ -62,28 +88,21 @@ jsPsych.plugins["headphone-screen-trial"] = {
   trial(displayElement, trialParameters) {
     while (displayElement.firstChild)
       displayElement.removeChild(displayElement.lastChild);
-    const channelMultipliers = new Array(3);
-    const correctChoice = getRandomInt(3);
-    const inPhasePrecedesOutOfPhase = getRandomInt(1) === 0;
-    const inPhaseMultipliers = { left: 1, right: 1 };
-    const outOfPhaseMultipliers = { left: 1, right: -1 };
+    const choices = 3;
+    const channelMultipliers = new Array(choices);
+    const correctChoice = getRandomInt(choices);
     channelMultipliers[correctChoice] = { left: 1 / 2, right: 1 / 2 };
-    let oneMultiplierPairRemaining = false;
-    for (let i = 0; i < 3; i += 1) {
+    const incorrectChoiceMultipliers = shuffle([
+      { left: 1, right: 1 },
+      { left: 1, right: -1 },
+    ]);
+    let incorrectChoiceIndex = 0;
+    for (let i = 0; i < choices; i += 1)
       if (i !== correctChoice) {
-        if (oneMultiplierPairRemaining) {
-          channelMultipliers[i] = inPhasePrecedesOutOfPhase
-            ? outOfPhaseMultipliers
-            : inPhaseMultipliers;
-          break;
-        } else {
-          channelMultipliers[i] = inPhasePrecedesOutOfPhase
-            ? inPhaseMultipliers
-            : outOfPhaseMultipliers;
-          oneMultiplierPairRemaining = true;
-        }
+        channelMultipliers[i] =
+          incorrectChoiceMultipliers[incorrectChoiceIndex];
+        incorrectChoiceIndex += 1;
       }
-    }
     const playButton = document.createElement("button");
     playButton.textContent = "play";
     const { leftChannel, rightChannel } = createStimulus(
@@ -110,12 +129,10 @@ jsPsych.plugins["headphone-screen-trial"] = {
         leftChannel.length,
         trialParameters.sampleRate_Hz
       );
-      const leftChannel_ = audioBuffer.getChannelData(0);
-      for (let i = 0; i < leftChannel_.length; i += 1)
-        leftChannel_[i] = leftChannel[i];
-      const rightChannel_ = audioBuffer.getChannelData(1);
-      for (let i = 0; i < rightChannel_.length; i += 1)
-        rightChannel_[i] = rightChannel[i];
+      for (let i = 0; i < leftChannel.length; i += 1) {
+        audioBuffer.getChannelData(0)[i] = leftChannel[i];
+        audioBuffer.getChannelData(1)[i] = rightChannel[i];
+      }
       const audioSource = audioContext.createBufferSource();
       audioSource.buffer = audioBuffer;
       audioSource.connect(audioContext.destination);
@@ -128,7 +145,7 @@ jsPsych.plugins["headphone-screen-trial"] = {
     displayElement.append(playButton);
     displayElement.append(choiceButtons);
     const choiceNames = ["FIRST", "SECOND", "THIRD"];
-    for (let i = 0; i < 3; i += 1) {
+    for (let i = 0; i < choices; i += 1) {
       const choiceButton = document.createElement("button");
       choiceButton.textContent = `${choiceNames[i]} sound is SOFTEST`;
       choiceButtons.append(choiceButton);
