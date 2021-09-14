@@ -1,8 +1,4 @@
-import * as plugin from "./plugin.js";
-
-jsPsych.plugins["headphone-screen-trial"] = plugin.config(
-  "headphone-screen-trial"
-);
+import "./plugin.js";
 
 jsPsych.init({
   timeline: [
