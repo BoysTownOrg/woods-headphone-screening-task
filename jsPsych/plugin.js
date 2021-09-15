@@ -73,6 +73,17 @@ function shuffle(array) {
   return array;
 }
 
+function pixelsString(a) {
+  return `${a}px`;
+}
+
+function buttonElement() {
+  const button = document.createElement("button");
+  button.className = "jspsych-btn";
+  button.style.margin = `${pixelsString(0)} ${pixelsString(8)}`;
+  return button;
+}
+
 jsPsych.plugins["headphone-screen-trial"] = {
   info: {
     name: "headphone-screen-trial",
@@ -103,7 +114,7 @@ jsPsych.plugins["headphone-screen-trial"] = {
           incorrectChoiceMultipliers[incorrectChoiceIndex];
         incorrectChoiceIndex += 1;
       }
-    const playButton = document.createElement("button");
+    const playButton = buttonElement();
     playButton.textContent = "play";
     const { leftChannel, rightChannel } = createStimulus(
       toneGeneration.multiplyFront(
@@ -146,7 +157,7 @@ jsPsych.plugins["headphone-screen-trial"] = {
     displayElement.append(choiceButtons);
     const choiceNames = ["FIRST", "SECOND", "THIRD"];
     for (let i = 0; i < choices; i += 1) {
-      const choiceButton = document.createElement("button");
+      const choiceButton = buttonElement();
       choiceButton.textContent = `${choiceNames[i]} sound is SOFTEST`;
       choiceButtons.append(choiceButton);
       choiceButton.onclick = () => {
