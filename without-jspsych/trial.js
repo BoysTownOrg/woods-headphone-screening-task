@@ -1,9 +1,5 @@
 import * as toneGeneration from "../lib/tone-generation.js";
-
-// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/random
-function getRandomInt(max) {
-  return Math.floor(Math.random() * max);
-}
+import { createChild } from "./utility.js";
 
 function createChannel(
   tone,
@@ -77,18 +73,23 @@ function pixelsString(a) {
   return `${a}px`;
 }
 
-function buttonElement() {
-  const button = document.createElement("button");
-  button.style.margin = `${pixelsString(0)} ${pixelsString(8)}`;
-  return button;
-}
-
 const AudioContext = window.AudioContext || window.webkitAudioContext;
 
 const audioContext = new AudioContext({
   latencyHint: "interactive",
   sampleRate: 44100,
 });
+
+function buttonElement(parentElement) {
+  const button = createChild(parentElement, "button");
+  button.style.margin = `${pixelsString(0)} ${pixelsString(8)}`;
+  return button;
+}
+
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/random
+function getRandomInt(max) {
+  return Math.floor(Math.random() * max);
+}
 
 export function trial(parentElement, trialParameters, onFinish) {
   const choices = 3;
@@ -105,7 +106,7 @@ export function trial(parentElement, trialParameters, onFinish) {
       channelMultipliers[i] = incorrectChoiceMultipliers[incorrectChoiceIndex];
       incorrectChoiceIndex += 1;
     }
-  const playButton = buttonElement();
+  const playButton = buttonElement(parentElement);
   playButton.textContent = "play";
   const { leftChannel, rightChannel } = createStimulus(
     toneGeneration.multiplyFront(
@@ -122,7 +123,7 @@ export function trial(parentElement, trialParameters, onFinish) {
     trialParameters,
     channelMultipliers
   );
-  const choiceButtons = document.createElement("div");
+  const choiceButtons = createChild(parentElement, "div");
   choiceButtons.style.display = "none";
   playButton.onclick = () => {
     const audioBuffer = audioContext.createBuffer(
@@ -143,11 +144,9 @@ export function trial(parentElement, trialParameters, onFinish) {
     };
     audioSource.start();
   };
-  parentElement.append(playButton);
-  parentElement.append(choiceButtons);
   const choiceNames = ["FIRST", "SECOND", "THIRD"];
   for (let i = 0; i < choices; i += 1) {
-    const choiceButton = buttonElement();
+    const choiceButton = buttonElement(choiceButtons, "button");
     choiceButton.textContent = `${choiceNames[i]} sound is SOFTEST`;
     choiceButtons.append(choiceButton);
     choiceButton.onclick = () => {
