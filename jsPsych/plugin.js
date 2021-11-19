@@ -84,18 +84,11 @@ function buttonElement() {
   return button;
 }
 
-jsPsych.plugins["headphone-screen-trial"] = {
-  info: {
-    name: "headphone-screen-trial",
-    description: "",
-    parameters: {
-      sampleRate_Hz: {},
-      toneFrequency_Hz: {},
-      toneDuration_ms: {},
-      toneRampDuration_ms: {},
-      interstimulusInterval_ms: {},
-    },
-  },
+export class HeadphoneScreenPlugin {
+  constructor(jsPsych) {
+    this.jsPsych = jsPsych;
+  }
+
   trial(displayElement, trialParameters) {
     while (displayElement.firstChild)
       displayElement.removeChild(displayElement.lastChild);
@@ -134,7 +127,7 @@ jsPsych.plugins["headphone-screen-trial"] = {
     const choiceButtons = document.createElement("div");
     choiceButtons.style.display = "none";
     playButton.onclick = () => {
-      const audioContext = jsPsych.pluginAPI.audioContext();
+      const audioContext = this.jsPsych.pluginAPI.audioContext();
       const audioBuffer = audioContext.createBuffer(
         2,
         leftChannel.length,
@@ -161,8 +154,19 @@ jsPsych.plugins["headphone-screen-trial"] = {
       choiceButton.textContent = `${choiceNames[i]} sound is SOFTEST`;
       choiceButtons.append(choiceButton);
       choiceButton.onclick = () => {
-        jsPsych.finishTrial({ correct: correctChoice === i });
+        this.jsPsych.finishTrial({ correct: correctChoice === i });
       };
     }
+  }
+}
+
+HeadphoneScreenPlugin.info = {
+  name: "headphone-screen",
+  parameters: {
+    sampleRate_Hz: {},
+    toneFrequency_Hz: {},
+    toneDuration_ms: {},
+    toneRampDuration_ms: {},
+    interstimulusInterval_ms: {},
   },
 };
