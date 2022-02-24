@@ -170,3 +170,7 @@ HeadphoneScreenPlugin.info = {
     interstimulusInterval_ms: {},
   },
 };
+
+if (typeof headphoneScreenPluginCallback !== "undefined") {
+  headphoneScreenPluginCallback(HeadphoneScreenPlugin);
+}
