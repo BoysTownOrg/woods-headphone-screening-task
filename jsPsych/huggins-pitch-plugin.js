@@ -10,7 +10,7 @@ function getRandomInt(max) {
 function createRamp(trialParameters) {
   return toneGeneration.ramp({
     sampleRate_Hz: trialParameters.sampleRate_Hz,
-    duration_ms: trialParameters.toneRampDuration_ms,
+    duration_ms: trialParameters.rampDuration_ms,
   });
 }
 
