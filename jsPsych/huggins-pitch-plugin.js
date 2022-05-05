@@ -83,9 +83,17 @@ export class HeadphoneScreenPlugin {
       toneGeneration.multiplyBack(noise, createRamp(trialParameters).reverse()),
       createRamp(trialParameters)
     );
-    const channel = toneGeneration.concatenateWithSilence(
+    const leftChannel = toneGeneration.concatenateWithSilence(
       rampedNoise,
       rampedPhaseInvertedNoise,
+      {
+        sampleRate_Hz: trialParameters.sampleRate_Hz,
+        silenceDuration_ms: trialParameters.interstimulusInterval_ms,
+      }
+    );
+    const rightChannel = toneGeneration.concatenateWithSilence(
+      rampedNoise,
+      rampedNoise,
       {
         sampleRate_Hz: trialParameters.sampleRate_Hz,
         silenceDuration_ms: trialParameters.interstimulusInterval_ms,
@@ -101,12 +109,12 @@ export class HeadphoneScreenPlugin {
       const audioContext = this.jsPsych.pluginAPI.audioContext();
       const audioBuffer = audioContext.createBuffer(
         2,
-        channel.length,
+        leftChannel.length,
         trialParameters.sampleRate_Hz
       );
-      for (let i = 0; i < channel.length; i += 1) {
-        audioBuffer.getChannelData(0)[i] = channel[i];
-        audioBuffer.getChannelData(1)[i] = channel[i];
+      for (let i = 0; i < leftChannel.length; i += 1) {
+        audioBuffer.getChannelData(0)[i] = leftChannel[i];
+        audioBuffer.getChannelData(1)[i] = rightChannel[i];
       }
       const audioSource = audioContext.createBufferSource();
       audioSource.buffer = audioBuffer;
