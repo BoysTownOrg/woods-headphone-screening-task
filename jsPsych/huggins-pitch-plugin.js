@@ -47,13 +47,13 @@ export class HeadphoneScreenPlugin {
       displayElement.removeChild(displayElement.lastChild);
     const noiseLength =
       (trialParameters.sampleRate_Hz * trialParameters.noiseDuration_ms) / 1000;
-    const noise = Array.from({ noiseLength }, () => 2 * randn_bm() - 1);
+    const noise = Array.from({ length: noiseLength }, () => 2 * randn_bm() - 1);
     const noiseDFTComplexArray = new ComplexArray(noiseLength)
       .map((value, index) => {
         value.real = noise[index];
       })
       .FFT();
-    const noiseDFT = Array.from({ noiseLength }, (v, index) => ({
+    const noiseDFT = Array.from({ length: noiseLength }, (v, index) => ({
       real: noiseDFTComplexArray.real[index],
       imag: noiseDFTComplexArray.imag[index],
     }));
@@ -69,7 +69,7 @@ export class HeadphoneScreenPlugin {
       })
       .InvFFT();
     const phaseInvertedNoise = Array.from(
-      { noiseLength },
+      { length: noiseLength },
       (v, index) => phaseInvertedNoiseComplexArray.real[index]
     );
     const rampedPhaseInvertedNoise = toneGeneration.multiplyFront(
