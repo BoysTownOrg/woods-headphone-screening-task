@@ -1,5 +1,5 @@
 import * as toneGeneration from "../lib/tone-generation.js";
-import { ComplexArray } from "https://cdn.jsdelivr.net/gh/BoysTownorg/jsfft@v0.0.4/lib/fft.js";
+import { ComplexArray } from "https://cdn.jsdelivr.net/gh/BoysTownorg/jsfft/lib/fft.js";
 import { phaseInvert } from "../lib/huggins-pitch.js";
 
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/random
