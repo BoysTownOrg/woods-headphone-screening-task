@@ -47,14 +47,12 @@ export class HeadphoneScreenPlugin {
       displayElement.removeChild(displayElement.lastChild);
     const noiseLength =
       (trialParameters.sampleRate_Hz * trialParameters.noiseDuration_ms) / 1000;
-    const noise = Array.from({ length: noiseLength }, () => 2 * randn_bm() - 1);
-    const otherNoise = Array.from(
-      { length: noiseLength },
-      () => 2 * randn_bm() - 1
+    const noises = Array.from({ length: 2 }, () =>
+      Array.from({ length: noiseLength }, () => 2 * randn_bm() - 1)
     );
     const noiseDFTComplexArray = new ComplexArray(noiseLength)
       .map((value, index) => {
-        value.real = noise[index];
+        value.real = noises[1][index];
       })
       .FFT();
     const noiseDFT = Array.from({ length: noiseLength }, (v, index) => ({
@@ -84,12 +82,15 @@ export class HeadphoneScreenPlugin {
       createRamp(trialParameters)
     );
     const rampedNoise = toneGeneration.multiplyFront(
-      toneGeneration.multiplyBack(noise, createRamp(trialParameters).reverse()),
+      toneGeneration.multiplyBack(
+        noises[1],
+        createRamp(trialParameters).reverse()
+      ),
       createRamp(trialParameters)
     );
     const rampedOtherNoise = toneGeneration.multiplyFront(
       toneGeneration.multiplyBack(
-        otherNoise,
+        noises[0],
         createRamp(trialParameters).reverse()
       ),
       createRamp(trialParameters)
