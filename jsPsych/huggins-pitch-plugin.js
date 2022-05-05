@@ -94,6 +94,15 @@ function createPhaseInvertedNoise(noise, trialParameters) {
   );
 }
 
+function createNoises(trialParameters, choices) {
+  const noiseLength =
+    (trialParameters.sampleRate_Hz * trialParameters.noiseDuration_ms) / 1000;
+  const noises = Array.from({ length: choices }, () =>
+    Array.from({ length: noiseLength }, () => 2 * randn_bm() - 1)
+  );
+  return noises;
+}
+
 export class HeadphoneScreenPlugin {
   constructor(jsPsych) {
     this.jsPsych = jsPsych;
@@ -103,25 +112,22 @@ export class HeadphoneScreenPlugin {
     while (displayElement.firstChild)
       displayElement.removeChild(displayElement.lastChild);
     const choices = 3;
-    const noiseLength =
-      (trialParameters.sampleRate_Hz * trialParameters.noiseDuration_ms) / 1000;
-    const noises = Array.from({ length: choices }, () =>
-      Array.from({ length: noiseLength }, () => 2 * randn_bm() - 1)
-    );
+    const correctChoice = getRandomInt(choices);
+    const noises = createNoises(trialParameters, choices);
     const rampedNoises = noises.map((noise) => ramp(noise, trialParameters));
-    const rampedPhaseInvertedNoise = ramp(
-      createPhaseInvertedNoise(noises[1], trialParameters),
+    const rampedNoisesWithPhaseInversion = rampedNoises.slice();
+    rampedNoisesWithPhaseInversion[correctChoice] = ramp(
+      createPhaseInvertedNoise(noises[correctChoice], trialParameters),
       trialParameters
     );
     const leftChannel = concatenateAllWithSilence(
-      [rampedNoises[0], rampedPhaseInvertedNoise, rampedNoises[2]],
+      rampedNoisesWithPhaseInversion,
       trialParameters
     );
     const rightChannel = concatenateAllWithSilence(
       rampedNoises,
       trialParameters
     );
-    const correctChoice = getRandomInt(choices);
     const playButton = buttonElement();
     playButton.textContent = "play";
     const choiceButtons = document.createElement("div");
@@ -148,10 +154,10 @@ export class HeadphoneScreenPlugin {
     };
     displayElement.append(playButton);
     displayElement.append(choiceButtons);
-    const choiceNames = ["FIRST", "SECOND", "THIRD"];
+    const choiceNames = ["1", "2", "3"];
     for (let i = 0; i < choices; i += 1) {
       const choiceButton = buttonElement();
-      choiceButton.textContent = `${choiceNames[i]} sound is SOFTEST`;
+      choiceButton.textContent = `${choiceNames[i]}`;
       choiceButtons.append(choiceButton);
       choiceButton.onclick = () => {
         this.jsPsych.finishTrial({ correct: correctChoice === i });
