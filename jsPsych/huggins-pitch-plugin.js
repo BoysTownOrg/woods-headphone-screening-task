@@ -50,6 +50,15 @@ export class HeadphoneScreenPlugin {
     const noises = Array.from({ length: 2 }, () =>
       Array.from({ length: noiseLength }, () => 2 * randn_bm() - 1)
     );
+    const rampedNoises = noises.map((noise) =>
+      toneGeneration.multiplyFront(
+        toneGeneration.multiplyBack(
+          noise,
+          createRamp(trialParameters).reverse()
+        ),
+        createRamp(trialParameters)
+      )
+    );
     const noiseDFTComplexArray = new ComplexArray(noiseLength)
       .map((value, index) => {
         value.real = noises[1][index];
@@ -81,22 +90,8 @@ export class HeadphoneScreenPlugin {
       ),
       createRamp(trialParameters)
     );
-    const rampedNoise = toneGeneration.multiplyFront(
-      toneGeneration.multiplyBack(
-        noises[1],
-        createRamp(trialParameters).reverse()
-      ),
-      createRamp(trialParameters)
-    );
-    const rampedOtherNoise = toneGeneration.multiplyFront(
-      toneGeneration.multiplyBack(
-        noises[0],
-        createRamp(trialParameters).reverse()
-      ),
-      createRamp(trialParameters)
-    );
     const leftChannel = toneGeneration.concatenateWithSilence(
-      rampedOtherNoise,
+      rampedNoises[0],
       rampedPhaseInvertedNoise,
       {
         sampleRate_Hz: trialParameters.sampleRate_Hz,
@@ -104,8 +99,8 @@ export class HeadphoneScreenPlugin {
       }
     );
     const rightChannel = toneGeneration.concatenateWithSilence(
-      rampedOtherNoise,
-      rampedNoise,
+      rampedNoises[0],
+      rampedNoises[1],
       {
         sampleRate_Hz: trialParameters.sampleRate_Hz,
         silenceDuration_ms: trialParameters.interstimulusInterval_ms,
