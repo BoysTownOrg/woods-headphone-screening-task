@@ -57,6 +57,18 @@ describe("tone generation", () => {
     ]);
   });
 
+  it("multiplies signals and creates new ones", () => {
+    const first = [1, 2, 3, 4, 5];
+    expect(multiplyFront(first, [6, 7, 8])).toEqual([
+      1 * 6,
+      2 * 7,
+      3 * 8,
+      4,
+      5,
+    ]);
+    expect(first).toEqual([1, 2, 3, 4, 5]);
+  });
+
   it("concatenates signals with silence between", () => {
     expect(
       concatenateWithSilence([1, 2, 3], [4, 5, 6], {
