@@ -43,11 +43,26 @@ function ramp(signal, trialParameters) {
     createRamp(trialParameters)
   );
 }
+
 function concatenateWithSilence(a, b, trialParameters) {
   return toneGeneration.concatenateWithSilence(a, b, {
     sampleRate_Hz: trialParameters.sampleRate_Hz,
     silenceDuration_ms: trialParameters.interstimulusInterval_ms,
   });
+}
+
+function concatenateAllWithSilence(signals, trialParameters) {
+  if (signals.length < 2) return signals;
+  const firstTwoSignalsCombined = concatenateWithSilence(
+    signals[0],
+    signals[1],
+    trialParameters
+  );
+  if (signals.length < 3) return firstTwoSignalsCombined;
+  return concatenateAllWithSilence(
+    [firstTwoSignalsCombined, ...signals.slice(2)],
+    trialParameters
+  );
 }
 
 export class HeadphoneScreenPlugin {
@@ -64,7 +79,7 @@ export class HeadphoneScreenPlugin {
     const noises = Array.from({ length: choices }, () =>
       Array.from({ length: noiseLength }, () => 2 * randn_bm() - 1)
     );
-    const rampedNoises = noises.map((noise) => ramp(noise));
+    const rampedNoises = noises.map((noise) => ramp(noise, trialParameters));
     const noiseDFTComplexArray = new ComplexArray(noiseLength)
       .map((value, index) => {
         value.real = noises[1][index];
@@ -90,14 +105,12 @@ export class HeadphoneScreenPlugin {
       (v, index) => phaseInvertedNoiseComplexArray.real[index]
     );
     const rampedPhaseInvertedNoise = ramp(phaseInvertedNoise, trialParameters);
-    const leftChannel = concatenateWithSilence(
-      rampedNoises[0],
-      rampedPhaseInvertedNoise,
+    const leftChannel = concatenateAllWithSilence(
+      [rampedNoises[0], rampedPhaseInvertedNoise, rampedNoises[2]],
       trialParameters
     );
-    const rightChannel = concatenateWithSilence(
-      rampedNoises[0],
-      rampedNoises[1],
+    const rightChannel = concatenateAllWithSilence(
+      rampedNoises,
       trialParameters
     );
     const correctChoice = getRandomInt(choices);
