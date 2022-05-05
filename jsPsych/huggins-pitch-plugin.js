@@ -48,6 +48,10 @@ export class HeadphoneScreenPlugin {
     const noiseLength =
       (trialParameters.sampleRate_Hz * trialParameters.noiseDuration_ms) / 1000;
     const noise = Array.from({ length: noiseLength }, () => 2 * randn_bm() - 1);
+    const otherNoise = Array.from(
+      { length: noiseLength },
+      () => 2 * randn_bm() - 1
+    );
     const noiseDFTComplexArray = new ComplexArray(noiseLength)
       .map((value, index) => {
         value.real = noise[index];
@@ -83,8 +87,15 @@ export class HeadphoneScreenPlugin {
       toneGeneration.multiplyBack(noise, createRamp(trialParameters).reverse()),
       createRamp(trialParameters)
     );
+    const rampedOtherNoise = toneGeneration.multiplyFront(
+      toneGeneration.multiplyBack(
+        otherNoise,
+        createRamp(trialParameters).reverse()
+      ),
+      createRamp(trialParameters)
+    );
     const leftChannel = toneGeneration.concatenateWithSilence(
-      rampedNoise,
+      rampedOtherNoise,
       rampedPhaseInvertedNoise,
       {
         sampleRate_Hz: trialParameters.sampleRate_Hz,
@@ -92,7 +103,7 @@ export class HeadphoneScreenPlugin {
       }
     );
     const rightChannel = toneGeneration.concatenateWithSilence(
-      rampedNoise,
+      rampedOtherNoise,
       rampedNoise,
       {
         sampleRate_Hz: trialParameters.sampleRate_Hz,
