@@ -65,6 +65,35 @@ function concatenateAllWithSilence(signals, trialParameters) {
   );
 }
 
+function createPhaseInvertedNoise(noise, trialParameters) {
+  const noiseDFTComplexArray = new ComplexArray(noise.length)
+    .map((value, index) => {
+      value.real = noise[index];
+    })
+    .FFT();
+  const phaseInvertedNoiseDFT = phaseInvert(
+    Array.from({ length: noise.length }, (v, index) => ({
+      real: noiseDFTComplexArray.real[index],
+      imag: noiseDFTComplexArray.imag[index],
+    })),
+    {
+      sampleRate_Hz: trialParameters.sampleRate_Hz,
+      centerFrequency_Hz: trialParameters.centerFrequency_Hz,
+      bandwidth_Hz: trialParameters.bandwidth_Hz,
+    }
+  );
+  const phaseInvertedNoiseComplexArray = new ComplexArray(noise.length)
+    .map((value, index) => {
+      value.real = phaseInvertedNoiseDFT[index].real;
+      value.imag = phaseInvertedNoiseDFT[index].imag;
+    })
+    .InvFFT();
+  return Array.from(
+    { length: noise.length },
+    (v, index) => phaseInvertedNoiseComplexArray.real[index]
+  );
+}
+
 export class HeadphoneScreenPlugin {
   constructor(jsPsych) {
     this.jsPsych = jsPsych;
@@ -80,31 +109,10 @@ export class HeadphoneScreenPlugin {
       Array.from({ length: noiseLength }, () => 2 * randn_bm() - 1)
     );
     const rampedNoises = noises.map((noise) => ramp(noise, trialParameters));
-    const noiseDFTComplexArray = new ComplexArray(noiseLength)
-      .map((value, index) => {
-        value.real = noises[1][index];
-      })
-      .FFT();
-    const noiseDFT = Array.from({ length: noiseLength }, (v, index) => ({
-      real: noiseDFTComplexArray.real[index],
-      imag: noiseDFTComplexArray.imag[index],
-    }));
-    const phaseInvertedNoiseDFT = phaseInvert(noiseDFT, {
-      sampleRate_Hz: trialParameters.sampleRate_Hz,
-      centerFrequency_Hz: trialParameters.centerFrequency_Hz,
-      bandwidth_Hz: trialParameters.bandwidth_Hz,
-    });
-    const phaseInvertedNoiseComplexArray = new ComplexArray(noiseLength)
-      .map((value, index) => {
-        value.real = phaseInvertedNoiseDFT[index].real;
-        value.imag = phaseInvertedNoiseDFT[index].imag;
-      })
-      .InvFFT();
-    const phaseInvertedNoise = Array.from(
-      { length: noiseLength },
-      (v, index) => phaseInvertedNoiseComplexArray.real[index]
+    const rampedPhaseInvertedNoise = ramp(
+      createPhaseInvertedNoise(noises[1], trialParameters),
+      trialParameters
     );
-    const rampedPhaseInvertedNoise = ramp(phaseInvertedNoise, trialParameters);
     const leftChannel = concatenateAllWithSilence(
       [rampedNoises[0], rampedPhaseInvertedNoise, rampedNoises[2]],
       trialParameters
