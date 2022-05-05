@@ -66,6 +66,11 @@ describe("tone generation", () => {
       4,
       5,
     ]);
+
+    expect(first).toEqual([1, 2, 3, 4, 5]);
+
+    expect(multiplyBack(first, [6, 7, 8])).toEqual([1, 2, 3 * 6, 4 * 7, 5 * 8]);
+
     expect(first).toEqual([1, 2, 3, 4, 5]);
   });
 
