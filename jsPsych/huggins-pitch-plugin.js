@@ -37,6 +37,19 @@ function randn_bm() {
   return num;
 }
 
+function ramp(signal, trialParameters) {
+  return toneGeneration.multiplyFront(
+    toneGeneration.multiplyBack(signal, createRamp(trialParameters).reverse()),
+    createRamp(trialParameters)
+  );
+}
+function concatenateWithSilence(a, b, trialParameters) {
+  return toneGeneration.concatenateWithSilence(a, b, {
+    sampleRate_Hz: trialParameters.sampleRate_Hz,
+    silenceDuration_ms: trialParameters.interstimulusInterval_ms,
+  });
+}
+
 export class HeadphoneScreenPlugin {
   constructor(jsPsych) {
     this.jsPsych = jsPsych;
@@ -45,20 +58,13 @@ export class HeadphoneScreenPlugin {
   trial(displayElement, trialParameters) {
     while (displayElement.firstChild)
       displayElement.removeChild(displayElement.lastChild);
+    const choices = 3;
     const noiseLength =
       (trialParameters.sampleRate_Hz * trialParameters.noiseDuration_ms) / 1000;
-    const noises = Array.from({ length: 2 }, () =>
+    const noises = Array.from({ length: choices }, () =>
       Array.from({ length: noiseLength }, () => 2 * randn_bm() - 1)
     );
-    const rampedNoises = noises.map((noise) =>
-      toneGeneration.multiplyFront(
-        toneGeneration.multiplyBack(
-          noise,
-          createRamp(trialParameters).reverse()
-        ),
-        createRamp(trialParameters)
-      )
-    );
+    const rampedNoises = noises.map((noise) => ramp(noise));
     const noiseDFTComplexArray = new ComplexArray(noiseLength)
       .map((value, index) => {
         value.real = noises[1][index];
@@ -83,30 +89,17 @@ export class HeadphoneScreenPlugin {
       { length: noiseLength },
       (v, index) => phaseInvertedNoiseComplexArray.real[index]
     );
-    const rampedPhaseInvertedNoise = toneGeneration.multiplyFront(
-      toneGeneration.multiplyBack(
-        phaseInvertedNoise,
-        createRamp(trialParameters).reverse()
-      ),
-      createRamp(trialParameters)
-    );
-    const leftChannel = toneGeneration.concatenateWithSilence(
+    const rampedPhaseInvertedNoise = ramp(phaseInvertedNoise, trialParameters);
+    const leftChannel = concatenateWithSilence(
       rampedNoises[0],
       rampedPhaseInvertedNoise,
-      {
-        sampleRate_Hz: trialParameters.sampleRate_Hz,
-        silenceDuration_ms: trialParameters.interstimulusInterval_ms,
-      }
+      trialParameters
     );
-    const rightChannel = toneGeneration.concatenateWithSilence(
+    const rightChannel = concatenateWithSilence(
       rampedNoises[0],
       rampedNoises[1],
-      {
-        sampleRate_Hz: trialParameters.sampleRate_Hz,
-        silenceDuration_ms: trialParameters.interstimulusInterval_ms,
-      }
+      trialParameters
     );
-    const choices = 3;
     const correctChoice = getRandomInt(choices);
     const playButton = buttonElement();
     playButton.textContent = "play";
